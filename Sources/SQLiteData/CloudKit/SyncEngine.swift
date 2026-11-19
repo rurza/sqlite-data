@@ -2128,12 +2128,32 @@
               )
               await upsertFromServerRecord(serverRecord, force: true)
             } catch let error as CKError where error.code == .unknownItem {
-              try await userDatabase.write { db in
-                try T
-                  .unscoped
-                  .where { #sql("\($0.primaryKey) = \(bind: recordPrimaryKey)") }
-                  .delete()
-                  .execute(db)
+              // NB: iCloud has never had this record: it was written here under a share this
+              //     device still believed writable. The row is the only copy of what was written,
+              //     so it is never deleted. The delegate may give it a home it can be sent to;
+              //     otherwise it is kept, left unsent, and reported.
+              let isHomed = try await userDatabase.write { db in
+                try $_isSynchronizingChanges.withValue(false) {
+                  try delegate?.syncEngine(
+                    self,
+                    refusedNewRecord: failedRecord.recordID,
+                    tableName: T.tableName,
+                    primaryKey: recordPrimaryKey,
+                    in: db
+                  ) ?? false
+                }
+              }
+              if isHomed {
+                // NB: A row moved to another zone is deleted from the zone it left, where iCloud
+                //     never had it.
+                syncEngine.state.remove(pendingRecordZoneChanges: [.deleteRecord(failedRecord.recordID)])
+              } else {
+                reportIssue(
+                  """
+                  iCloud refused a new record for lack of permission: \
+                  \(failedRecord.recordID.recordName). The row is kept and left unsent.
+                  """
+                )
               }
             }
           }

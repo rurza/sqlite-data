@@ -7,6 +7,7 @@
   import SQLiteData
   import SnapshotTestingCustomDump
   import Testing
+  import TestLocals
 
   extension BaseCloudKitTests {
     @MainActor
@@ -348,11 +349,18 @@
             }
           }
         }
-        try await syncEngine.processPendingRecordZoneChanges(scope: .shared)
+        // NB: A record iCloud never had, refused for lack of permission, is kept, left unsent and
+        //     reported — never deleted: it may be the only copy of something just written.
+        try await withKnownIssue {
+          try await syncEngine.processPendingRecordZoneChanges(scope: .shared)
+        }
 
         try await self.userDatabase.read { db in
-          try #expect(Reminder.all.fetchCount(db) == 0)
+          try #expect(
+            Reminder.all.fetchAll(db) == [Reminder(id: 1, title: "Get milk", remindersListID: 1)]
+          )
         }
+        #expect(syncEngine.shared.state.pendingRecordZoneChanges.isEmpty)
         assertInlineSnapshot(of: container, as: .customDump) {
           """
           MockCloudContainer(
@@ -381,6 +389,79 @@
             )
           )
           """
+        }
+      }
+
+      // A record iCloud never had, refused for lack of permission, offered to the delegate: one that
+      // moves it home has it sent there, and the row is never deleted.
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test(.taskLocal($syncEngineDelegate, MovesRefusedReminderHome()))
+      func createRecordRefusedForPermissionIsMovedHomeByDelegate() async throws {
+        let externalZone = CKRecordZone(
+          zoneID: CKRecordZone.ID(
+            zoneName: "external.zone",
+            ownerName: "external.owner"
+          )
+        )
+        try await syncEngine.modifyRecordZones(scope: .shared, saving: [externalZone]).notify()
+
+        let remindersListRecord = CKRecord(
+          recordType: RemindersList.tableName,
+          recordID: RemindersList.recordID(for: 1, zoneID: externalZone.zoneID)
+        )
+        remindersListRecord.setValue(1, forKey: "id", at: now)
+        remindersListRecord.setValue("Personal", forKey: "title", at: now)
+        let share = CKShare(
+          rootRecord: remindersListRecord,
+          shareID: CKRecord.ID(
+            recordName: "share-\(remindersListRecord.recordID.recordName)",
+            zoneID: remindersListRecord.recordID.zoneID
+          )
+        )
+        share.publicPermission = .readWrite
+        share.currentUserParticipant?.permission = .readWrite
+
+        try await syncEngine
+          .acceptShare(
+            metadata: ShareMetadata(
+              containerIdentifier: container.containerIdentifier!,
+              hierarchicalRootRecordID: remindersListRecord.recordID,
+              rootRecord: remindersListRecord,
+              share: share
+            )
+          )
+        try await self.userDatabase.userWrite { db in
+          try db.seed { RemindersList(id: 2, title: "Mine") }
+        }
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+
+        let freshShare = try syncEngine.shared.database.record(for: share.recordID) as! CKShare
+        freshShare.publicPermission = .readOnly
+        freshShare.currentUserParticipant?.permission = .readOnly
+        let _ = try syncEngine.modifyRecords(scope: .shared, saving: [freshShare])
+        try await withDependencies {
+          $0.currentTime.now += 1
+        } operation: {
+          try await self.userDatabase.userWrite { db in
+            try db.seed {
+              Reminder(id: 1, title: "Get milk", remindersListID: 1)
+            }
+          }
+          try await syncEngine.processPendingRecordZoneChanges(scope: .shared)
+          try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        }
+
+        try await self.userDatabase.read { db in
+          try #expect(
+            Reminder.all.fetchAll(db) == [Reminder(id: 1, title: "Get milk", remindersListID: 2)]
+          )
+        }
+        let home = try syncEngine.private.database.record(for: Reminder.recordID(for: 1))
+        #expect(home.parent?.recordID == RemindersList.recordID(for: 2))
+        #expect(throws: (any Error).self) {
+          try self.syncEngine.shared.database.record(
+            for: Reminder.recordID(for: 1, zoneID: externalZone.zoneID)
+          )
         }
       }
 
@@ -469,6 +550,22 @@
           """
         }
       }
+    }
+  }
+
+  /// Moves a reminder iCloud refused for lack of permission onto list 2, in this person's own zone.
+  @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+  final class MovesRefusedReminderHome: SyncEngineDelegate {
+    func syncEngine(
+      _ syncEngine: SyncEngine,
+      refusedNewRecord recordID: CKRecord.ID,
+      tableName: String,
+      primaryKey: String,
+      in db: Database
+    ) throws -> Bool {
+      guard tableName == Reminder.tableName, let id = Int(primaryKey) else { return false }
+      try Reminder.find(id).update { $0.remindersListID = 2 }.execute(db)
+      return true
     }
   }
 #endif
