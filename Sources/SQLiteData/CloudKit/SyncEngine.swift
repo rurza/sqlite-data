@@ -1083,6 +1083,10 @@
       options: CKSyncEngine.SendChangesOptions = CKSyncEngine.SendChangesOptions(scope: .all),
       syncEngine: any SyncEngineProtocol
     ) async -> CKSyncEngine.RecordZoneChangeBatch? {
+      // NB: Read before 'pendingRecordZoneChanges', which forgets the metadata of deleted records.
+      let parentRecordNames = await selfReferencingParentRecordNames(
+        for: syncEngine.state.pendingRecordZoneChanges.filter(options.scope.contains)
+      )
       var changes = await pendingRecordZoneChanges(options: options, syncEngine: syncEngine)
       guard !changes.isEmpty
       else { return nil }
@@ -1112,6 +1116,20 @@
         default:
           return true
         }
+      }
+      // NB: Within a table that references itself, a parent is saved before its children and
+      //     deleted after them, so that no batch refers to a parent CloudKit does not have.
+      for tableName in selfReferencingTableNames {
+        changes.orderHierarchically(
+          isMember: { $0.isSave && $0.id?.tableName == tableName },
+          depth: { depth(of: $0.id?.recordName, parentRecordNames: parentRecordNames) },
+          deepestFirst: false
+        )
+        changes.orderHierarchically(
+          isMember: { !$0.isSave && $0.id?.tableName == tableName },
+          depth: { depth(of: $0.id?.recordName, parentRecordNames: parentRecordNames) },
+          deepestFirst: true
+        )
       }
 
       #if DEBUG
@@ -1580,13 +1598,29 @@
         }
         ?? [CKRecord]()
 
-      let modifications = (modifications + unsyncedRecords).sorted { lhs, rhs in
+      var orderedModifications = (modifications + unsyncedRecords).sorted { lhs, rhs in
         topologicallyAscending(
           lhsTableName: lhs.recordType,
           rhsTableName: rhs.recordType,
           rootFirst: true
         )
       }
+      // NB: Within a table that references itself, a parent is written before its children, so
+      //     that a hierarchy arriving in one batch does not wait for the next fetch.
+      if !selfReferencingTableNames.isEmpty {
+        let parentRecordNames = Dictionary(
+          orderedModifications.map { ($0.recordID.recordName, $0.parent?.recordID.recordName) },
+          uniquingKeysWith: { first, _ in first }
+        )
+        for tableName in selfReferencingTableNames {
+          orderedModifications.orderHierarchically(
+            isMember: { $0.recordType == tableName },
+            depth: { depth(of: $0.recordID.recordName, parentRecordNames: parentRecordNames) },
+            deepestFirst: false
+          )
+        }
+      }
+      let modifications = orderedModifications
 
       enum ShareOrReference {
         case share(CKShare)
@@ -1631,6 +1665,38 @@
           }
         }
       }
+    }
+
+    /// The tables whose one foreign key references the table itself: a hierarchy of its own
+    /// rows, each pointing at its parent row with `CKRecord.parent`.
+    var selfReferencingTableNames: [String] {
+      foreignKeysByTableName
+        .compactMap { tableName, foreignKeys in
+          foreignKeys.count == 1 && foreignKeys.first?.table == tableName ? tableName : nil
+        }
+        .sorted()
+    }
+
+    /// The parent of every synchronized row of a table that references itself, by record name,
+    /// when any of the pending changes is to such a row.
+    private func selfReferencingParentRecordNames(
+      for changes: [CKSyncEngine.PendingRecordZoneChange]
+    ) async -> [String: String?] {
+      let tableNames = Set(selfReferencingTableNames)
+      guard changes.contains(where: { $0.id?.tableName.map(tableNames.contains) ?? false })
+      else { return [:] }
+      return await withErrorReporting(.sqliteDataCloudKitFailure) {
+        try await metadatabase.read { db in
+          Dictionary(
+            try SyncMetadata
+              .where { $0.recordType.in(tableNames) }
+              .select { ($0.recordName, $0.parentRecordName) }
+              .fetchAll(db),
+            uniquingKeysWith: { first, _ in first }
+          )
+        }
+      }
+        ?? [:]
     }
 
     private func topologicallyAscending(
@@ -2101,6 +2167,50 @@
         return nil
       }
     }
+
+    var isSave: Bool {
+      if case .saveRecord = self { true } else { false }
+    }
+  }
+
+  /// How many ancestors a record has, following `parentRecordNames` until a record with no
+  /// parent there. A cycle is cut short rather than followed for ever.
+  func depth(of recordName: String?, parentRecordNames: [String: String?]) -> Int {
+    var depth = 0
+    var recordName = recordName
+    while let current = recordName,
+      let parent = parentRecordNames[current] ?? nil,
+      depth < parentRecordNames.count
+    {
+      depth += 1
+      recordName = parent
+    }
+    return depth
+  }
+
+  extension Array {
+    /// Puts the elements that belong to one hierarchy in order of their depth, in the places
+    /// those elements already held, leaving every other element where it was. Elements of one
+    /// depth keep their order.
+    mutating func orderHierarchically(
+      isMember: (Element) -> Bool,
+      depth: (Element) -> Int,
+      deepestFirst: Bool
+    ) {
+      let positions = indices.filter { isMember(self[$0]) }
+      guard positions.count > 1
+      else { return }
+      let ordered = positions
+        .map { (element: self[$0], depth: depth(self[$0]), position: $0) }
+        .sorted {
+          guard $0.depth != $1.depth
+          else { return $0.position < $1.position }
+          return deepestFirst ? $0.depth > $1.depth : $0.depth < $1.depth
+        }
+      for (position, member) in zip(positions, ordered) {
+        self[position] = member.element
+      }
+    }
   }
 
   extension CKRecord.ID {
@@ -2407,6 +2517,10 @@
         }
         let toTables = try open(table)
         for toTable in toTables {
+          // NB: A table that references itself is a hierarchy of its own rows, not a cycle
+          //     between tables. Its rows are put in order by their parents instead.
+          guard toTable != table.base.tableName
+          else { continue }
           guard let toTableType = tablesByName[toTable]
           else { continue }
           dependencies[HashableSynchronizedTable(table), default: []].append(toTableType)
@@ -2431,7 +2545,8 @@
         throw SyncEngine.SchemaError(
           reason: .cycleDetected,
           debugDescription: """
-            Cycles are not currently permitted in schemas, e.g. a table that references itself.
+            Cycles between tables are not currently permitted in schemas. A table may reference \
+            itself.
             """
         )
       }

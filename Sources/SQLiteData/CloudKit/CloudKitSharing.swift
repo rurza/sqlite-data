@@ -58,7 +58,9 @@
     /// This method will thrown an error if:
     ///
     /// * The table the `record` belongs to is not synchronized to CloudKit.
-    /// * The `record` has any foreign keys. Only root records are shareable in CloudKit.
+    /// * The `record` has any foreign keys. Only root records are shareable in CloudKit. The one
+    /// exception is a table whose only foreign key references the table itself: a row of it whose
+    /// reference is `NULL` is the root of a hierarchy, and is shared with every row below it.
     /// * The table the `record` belongs to is a "private" table as determined by the
     /// [`SyncEngine` initializer](<doc:SyncEngine/init(for:tables:privateTables:containerIdentifier:defaultZone:startImmediately:delegate:logger:)>).
     /// * The `record` is being shared before it has been synchronized to CloudKit.
@@ -100,14 +102,31 @@
         )
       }
       if let foreignKeys = foreignKeysByTableName[T.tableName], !foreignKeys.isEmpty {
-        throw SharingError(
-          recordTableName: T.tableName,
-          recordPrimaryKey: record.primaryKey.rawIdentifier,
-          reason: .recordNotRoot(foreignKeys),
-          debugDescription: """
-            Only root records are shareable, but parent record(s) detected via foreign key(s).
-            """
-        )
+        // NB: A row of a table whose one foreign key references the table itself is the root of
+        //     a hierarchy when its own reference is empty, and is shared with everything below
+        //     it. A row whose reference is set belongs to its parent's share: CloudKit allows a
+        //     record in one share only.
+        let isSelfReferencing =
+          foreignKeys.count == 1 && foreignKeys.first?.table == T.tableName
+        var hasParent = false
+        if isSelfReferencing {
+          let recordName = record.recordName
+          hasParent = try await metadatabase.read { db in
+            try SyncMetadata
+              .where { $0.recordName.eq(recordName) && $0.parentRecordName.isNot(nil) }
+              .fetchCount(db) > 0
+          }
+        }
+        if !isSelfReferencing || hasParent {
+          throw SharingError(
+            recordTableName: T.tableName,
+            recordPrimaryKey: record.primaryKey.rawIdentifier,
+            reason: .recordNotRoot(foreignKeys),
+            debugDescription: """
+              Only root records are shareable, but parent record(s) detected via foreign key(s).
+              """
+          )
+        }
       }
       guard !privateTables.contains(where: { T.self == $0.base })
       else {

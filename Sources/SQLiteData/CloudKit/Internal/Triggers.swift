@@ -438,8 +438,11 @@
             && $0.recordType.is(parentRecordType)
         }
         .select { RootShare.Columns(parentRecordName: $0.parentRecordName, share: $0.share) }
+        // NB: 'UNION', not 'UNION ALL': a table that references itself can hold a cycle — two
+        //     devices each moving one row under the other — and only 'UNION' stops at a row
+        //     already seen.
         .union(
-          all: true,
+          all: false,
           SyncMetadata
             .select {
               RootShare.Columns(parentRecordName: $0.parentRecordName, share: $0.share)
@@ -474,8 +477,11 @@
         .select {
           DescendantMetadata.Columns(recordName: $0.recordName, parentRecordName: #bind(nil))
         }
+        // NB: 'UNION', not 'UNION ALL': a table that references itself can hold a cycle — two
+        //     devices each moving one row under the other — and only 'UNION' stops at a row
+        //     already seen.
         .union(
-          all: true,
+          all: false,
           SyncMetadata
             .select {
               DescendantMetadata.Columns(
@@ -504,8 +510,11 @@
       SyncMetadata
         .where { $0.recordName.eq(recordName) }
         .select { AncestorMetadata.Columns($0) }
+        // NB: 'UNION', not 'UNION ALL': a table that references itself can hold a cycle — two
+        //     devices each moving one row under the other — and only 'UNION' stops at a row
+        //     already seen.
         .union(
-          all: true,
+          all: false,
           SyncMetadata
             .select { AncestorMetadata.Columns($0) }
             .join(AncestorMetadata.all) { $0.recordName.is($1.parentRecordName) }
