@@ -350,6 +350,53 @@
       }
 
       @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func selfReferenceBesideAnotherForeignKeyIsACycle() async throws {
+        let error = try #require(
+          await #expect(throws: (any Error).self) {
+            let database = try DatabaseQueue()
+            try await database.write { db in
+              try #sql(
+                """
+                CREATE TABLE "shelfOwners" (
+                  "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+                ) STRICT
+                """
+              )
+              .execute(db)
+              try #sql(
+                """
+                CREATE TABLE "ownedShelves" (
+                  "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                  "parentID" INTEGER REFERENCES "ownedShelves"("id") ON DELETE CASCADE,
+                  "ownerID" INTEGER REFERENCES "shelfOwners"("id") ON DELETE CASCADE
+                ) STRICT
+                """
+              )
+              .execute(db)
+            }
+            _ = try await SyncEngine(
+              container: MockCloudContainer(
+                containerIdentifier: "deadbeef",
+                privateCloudDatabase: MockCloudDatabase(databaseScope: .private),
+                sharedCloudDatabase: MockCloudDatabase(databaseScope: .shared)
+              ),
+              userDatabase: UserDatabase(database: database),
+              tables: ShelfOwner.self,
+              OwnedShelf.self
+            )
+          }
+        )
+        assertInlineSnapshot(of: error, as: .customDump) {
+          """
+          SyncEngine.SchemaError(
+            reason: .cycleDetected,
+            debugDescription: "Cycles between tables are not currently permitted in schemas. A table may reference itself when that is its only foreign key."
+          )
+          """
+        }
+      }
+
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
       @Test func cycleValidation() async throws {
         let error = try #require(
           await #expect(throws: (any Error).self) {
@@ -395,7 +442,7 @@
           """
           SyncEngine.SchemaError(
             reason: .cycleDetected,
-            debugDescription: "Cycles between tables are not currently permitted in schemas. A table may reference itself."
+            debugDescription: "Cycles between tables are not currently permitted in schemas. A table may reference itself when that is its only foreign key."
           )
           """
         }
@@ -414,5 +461,13 @@
   @Table struct CycleB: Identifiable {
     let id: Int
     let cycleAID: CycleA.ID?
+  }
+  @Table("shelfOwners") struct ShelfOwner: Identifiable {
+    let id: Int
+  }
+  @Table("ownedShelves") struct OwnedShelf: Identifiable {
+    let id: Int
+    let parentID: OwnedShelf.ID?
+    let ownerID: ShelfOwner.ID?
   }
 #endif

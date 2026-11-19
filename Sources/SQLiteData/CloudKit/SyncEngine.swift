@@ -2671,9 +2671,11 @@
         }
         let toTables = try open(table)
         for toTable in toTables {
-          // NB: A table that references itself is a hierarchy of its own rows, not a cycle
-          //     between tables. Its rows are put in order by their parents instead.
-          guard toTable != table.base.tableName
+          // NB: A table whose only foreign key references itself is a hierarchy of its own rows,
+          //     not a cycle between tables. Its rows are put in order by their parents instead.
+          //     A reference to itself beside another foreign key is still a cycle: such a row
+          //     would get no 'CKRecord.parent' and no order.
+          guard !(toTable == table.base.tableName && toTables.count == 1)
           else { continue }
           guard let toTableType = tablesByName[toTable]
           else { continue }
@@ -2700,7 +2702,7 @@
           reason: .cycleDetected,
           debugDescription: """
             Cycles between tables are not currently permitted in schemas. A table may reference \
-            itself.
+            itself when that is its only foreign key.
             """
         )
       }
