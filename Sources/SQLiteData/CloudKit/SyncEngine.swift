@@ -543,6 +543,7 @@
             previousRecordTypeByTableName: previousRecordTypeByTableName,
             currentRecordTypeByTableName: currentRecordTypeByTableName
           )
+          try await fillInHierarchicalParents()
           try await cacheUserTables(recordTypes: currentRecordTypes)
         }
       }
@@ -728,6 +729,56 @@
             )
             try await userDatabase.write { db in
               try #sql(query).execute(db)
+            }
+          }
+        }
+        try await open(table)
+      }
+    }
+
+    /// Writes the parent of every row of a table that references itself into its metadata,
+    /// where the metadata does not have it, and sends exactly those rows.
+    ///
+    /// The triggers record a row's parent only when the row is written. A table that gained its
+    /// reference to itself by being rebuilt — which is how SQLite adds a foreign key — was rebuilt
+    /// before the triggers existed, so every row already there still says it has no parent, and
+    /// would be sent without one, outside its root's share, for as long as nobody edits it.
+    ///
+    /// The rows are sent as they are: only the parent changes, and the time of the last edit is
+    /// left alone, so a value another device changed and this one has not fetched yet is not
+    /// overwritten by this one's older value. On a library already filled in, this writes nothing.
+    private func fillInHierarchicalParents() async throws {
+      for tableName in selfReferencingTableNames {
+        guard
+          let table = tablesByName[tableName],
+          let foreignKey = foreignKeysByTableName[tableName]?.first
+        else { continue }
+        func open<T>(_: some SynchronizableTable<T>) async throws {
+          let parent = """
+            (SELECT CAST(\(foreignKey.from.quotedDatabaseIdentifier) AS TEXT) \
+            FROM \(T.tableName.quotedDatabaseIdentifier) \
+            WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = "metadata"."recordPrimaryKey")
+            """
+          let rowExists = """
+            EXISTS (SELECT 1 FROM \(T.tableName.quotedDatabaseIdentifier) \
+            WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = "metadata"."recordPrimaryKey")
+            """
+          try await userDatabase.write { db in
+            // NB: Outside 'isSynchronizing', so that the metadata's own trigger queues the save.
+            try $_isSynchronizingChanges.withValue(false) {
+              try db.execute(
+                sql: """
+                  UPDATE \(SyncMetadata.tableName.quotedDatabaseIdentifier) AS "metadata"
+                  SET
+                    "parentRecordPrimaryKey" = \(parent),
+                    "parentRecordType" = CASE WHEN \(parent) IS NULL THEN NULL ELSE ? END
+                  WHERE "metadata"."recordType" = ?
+                    AND NOT "metadata"."_isDeleted"
+                    AND \(rowExists)
+                    AND "metadata"."parentRecordPrimaryKey" IS NOT \(parent)
+                  """,
+                arguments: [T.tableName, T.tableName]
+              )
             }
           }
         }
