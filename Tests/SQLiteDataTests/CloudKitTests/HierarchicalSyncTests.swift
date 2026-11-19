@@ -36,9 +36,10 @@
       // MARK: - A parent CloudKit does not have
 
       /// Another device deleted folder 1, and this one has not heard yet. Moving folder 5, which
-      /// holds 6, under 1 is refused by CloudKit — and must not delete 5 and 6, here or there.
+      /// holds 6, under 1 is refused by CloudKit — and must not delete 5 and 6, here or there. Nor
+      /// may it bring 1 back: iCloud had 1, so it was deleted on purpose, and 5 goes to the top.
       @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
-      @Test func moveIntoRemotelyDeletedParentKeepsSubtree() async throws {
+      @Test func moveIntoRemotelyDeletedParentSetsRowLoose() async throws {
         try await userDatabase.userWrite { db in
           try db.seed {
             Folder(id: 1, title: "Gone")
@@ -55,9 +56,8 @@
           try await userDatabase.userWrite { db in
             try Folder.find(5).update { $0.parentID = #bind(1) }.execute(db)
           }
-          // Refused; then the parent, which CloudKit has forgotten, and the row again; then the
-          // parent as a new record.
-          for _ in 1...3 {
+          // Refused; then the row again, at the top.
+          for _ in 1...2 {
             try await syncEngine.processPendingRecordZoneChanges(scope: .private)
           }
         }
@@ -67,16 +67,112 @@
           folders,
           [
             Folder(id: 1, title: "Gone"),
-            Folder(id: 5, title: "Mine", parentID: 1),
+            Folder(id: 5, title: "Mine"),
             Folder(id: 6, title: "Inside", parentID: 5),
           ]
         )
         let five = try syncEngine.private.database.record(for: Folder.recordID(for: 5))
         let six = try syncEngine.private.database.record(for: Folder.recordID(for: 6))
-        _ = try syncEngine.private.database.record(for: Folder.recordID(for: 1))
-        #expect(five.parent?.recordID == Folder.recordID(for: 1))
+        #expect(five.parent == nil)
         #expect(six.parent?.recordID == Folder.recordID(for: 5))
+        #expect(throws: (any Error).self) {
+          try self.syncEngine.private.database.record(for: Folder.recordID(for: 1))
+        }
         #expect(syncEngine.private.state.pendingRecordZoneChanges.isEmpty)
+      }
+
+      /// A parent iCloud has never had — made here, its own save not yet through — is sent again
+      /// with the row once. Refused a second time, the row goes to the top instead: no refusal is
+      /// answered by the same two saves for ever.
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func parentICloudNeverHadIsResentOnce() async throws {
+        try await userDatabase.userWrite { db in
+          try db.seed { Folder(id: 5, title: "Mine") }
+        }
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        try await withDependencies {
+          $0.currentTime.now += 1
+        } operation: {
+          try await userDatabase.userWrite { db in
+            try db.seed { Folder(id: 7, title: "New") }
+            try Folder.find(5).update { $0.parentID = #bind(7) }.execute(db)
+          }
+        }
+        syncEngine.private.state.remove(
+          pendingRecordZoneChanges: syncEngine.private.state.pendingRecordZoneChanges
+        )
+        let five = try syncEngine.private.database.record(for: Folder.recordID(for: 5))
+
+        await syncEngine.handleSentRecordZoneChanges(
+          failedRecordSaves: [(five, CKError(.referenceViolation))],
+          syncEngine: syncEngine.private
+        )
+        #expect(
+          Set(syncEngine.private.state.pendingRecordZoneChanges) == [
+            .saveRecord(Folder.recordID(for: 7)),
+            .saveRecord(Folder.recordID(for: 5)),
+          ]
+        )
+        syncEngine.private.state.remove(
+          pendingRecordZoneChanges: syncEngine.private.state.pendingRecordZoneChanges
+        )
+
+        await syncEngine.handleSentRecordZoneChanges(
+          failedRecordSaves: [(five, CKError(.referenceViolation))],
+          syncEngine: syncEngine.private
+        )
+        let folders = try await localFolders()
+        expectNoDifference(folders, [Folder(id: 5, title: "Mine"), Folder(id: 7, title: "New")])
+        #expect(
+          syncEngine.private.state.pendingRecordZoneChanges == [
+            .saveRecord(Folder.recordID(for: 5))
+          ]
+        )
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        #expect(try syncEngine.private.database.record(for: Folder.recordID(for: 5)).parent == nil)
+      }
+
+      /// Two rows each the other's parent, refused: the ring is found here and broken at the
+      /// lowest id, whichever of the two was refused, and neither is sent again behind the other.
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func refusedCycleIsBrokenAtLowestID() async throws {
+        try await userDatabase.userWrite { db in
+          try db.seed {
+            Folder(id: 1, title: "One")
+            Folder(id: 2, title: "Two", parentID: 1)
+          }
+        }
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        try await withDependencies {
+          $0.currentTime.now += 1
+        } operation: {
+          try await userDatabase.userWrite { db in
+            try Folder.find(1).update { $0.parentID = #bind(2) }.execute(db)
+          }
+        }
+        syncEngine.private.state.remove(
+          pendingRecordZoneChanges: syncEngine.private.state.pendingRecordZoneChanges
+        )
+        let two = try syncEngine.private.database.record(for: Folder.recordID(for: 2))
+
+        await syncEngine.handleSentRecordZoneChanges(
+          failedRecordSaves: [(two, CKError(.referenceViolation))],
+          syncEngine: syncEngine.private
+        )
+
+        let folders = try await localFolders()
+        expectNoDifference(
+          folders,
+          [Folder(id: 1, title: "One"), Folder(id: 2, title: "Two", parentID: 1)]
+        )
+        #expect(
+          Set(syncEngine.private.state.pendingRecordZoneChanges) == [
+            .saveRecord(Folder.recordID(for: 1)),
+            .saveRecord(Folder.recordID(for: 2)),
+          ]
+        )
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        #expect(try syncEngine.private.database.record(for: Folder.recordID(for: 1)).parent == nil)
       }
 
       /// A parent this device has, but in another zone, can never be referenced from the row's

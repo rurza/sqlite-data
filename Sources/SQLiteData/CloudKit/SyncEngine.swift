@@ -35,6 +35,10 @@
     package let syncEngines = LockIsolated<SyncEngines>(SyncEngines())
     package let defaultZone: CKRecordZone
     let delegate: (any SyncEngineDelegate)?
+    /// The parents of rows of a table that references itself that were sent again, in this
+    /// process, because CloudKit refused a row for lacking them. A parent is sent again once: a
+    /// second refusal sets the row loose instead.
+    let resentParentRecordIDs = LockIsolated<Set<CKRecord.ID>>([])
     let defaultSyncEngines:
       @Sendable (any DatabaseReader, SyncEngine)
         -> (private: any SyncEngineProtocol, shared: any SyncEngineProtocol)
@@ -1751,10 +1755,21 @@
     /// What to do with a row of a table that references itself, whose save CloudKit refused
     /// because it does not have the row's parent.
     ///
-    /// Never a deletion. When this device still has the parent, in the row's own zone, the parent
-    /// and the row are sent again — the parent first, since saves are ordered by depth. Otherwise
-    /// the row's reference is set to `NULL` as a change of this device's, moving the row, and
-    /// everything below it, to the top of the hierarchy.
+    /// Never a deletion: the row may hold a whole subtree, moved there on purpose. The row's
+    /// reference is set to `NULL` as a change of this device's — moving the row, and everything
+    /// below it, to the top of the hierarchy — whenever sending the parent again would be wrong
+    /// or useless:
+    ///
+    /// - the parent is not here, or is in another zone, so CloudKit can never have it there;
+    /// - the parent is the row's own descendant — a ring, which CloudKit can never accept. It is
+    ///   broken at the row with the lowest primary key, whichever row was refused, so that two
+    ///   devices holding the same ring break it the same way;
+    /// - iCloud has had the parent before — this device has its server record — so another
+    ///   device deleted it, and sending it again would bring back a row someone deleted;
+    /// - the parent was already sent again once, in this process, and the row is refused anyway.
+    ///
+    /// Only a parent iCloud has never had — made here, its own save not yet through — is sent
+    /// again with the row, the parent first, since saves are ordered by depth.
     ///
     /// - Returns: The records to save again.
     private func resolveHierarchicalReferenceViolation<T>(
@@ -1765,15 +1780,32 @@
       droppedRecordIDs: Set<CKRecord.ID>
     ) async throws -> [CKRecord.ID] {
       try await userDatabase.write { db in
-        let parentRecordPrimaryKey = try String.fetchOne(
-          db,
-          sql: """
-            SELECT CAST(\(foreignKey.from.quotedDatabaseIdentifier) AS TEXT) FROM \(T.tableName.quotedDatabaseIdentifier)
-            WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
-            """,
-          arguments: [recordPrimaryKey]
-        )
-        guard let parentRecordPrimaryKey
+        func parentKey(of primaryKey: String) throws -> String? {
+          try String.fetchOne(
+            db,
+            sql: """
+              SELECT CAST(\(foreignKey.from.quotedDatabaseIdentifier) AS TEXT) FROM \(T.tableName.quotedDatabaseIdentifier)
+              WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
+              """,
+            arguments: [primaryKey]
+          )
+        }
+        /// Sets a row loose as this device's own edit, which its triggers queue to be sent.
+        func setLoose(_ primaryKey: String) throws {
+          guard !foreignKey.isNotNull
+          else { return }
+          try $_isSynchronizingChanges.withValue(false) {
+            try db.execute(
+              sql: """
+                UPDATE \(T.tableName.quotedDatabaseIdentifier) SET \(foreignKey.from.quotedDatabaseIdentifier) = NULL
+                WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
+                """,
+              arguments: [primaryKey]
+            )
+          }
+        }
+
+        guard let parentRecordPrimaryKey = try parentKey(of: recordPrimaryKey)
         else {
           // NB: The row is a root now, or gone: whatever is sent next carries no parent.
           return try T.unscoped
@@ -1799,23 +1831,56 @@
               && $0.ownerName.eq(recordID.zoneID.ownerName)
           }
           .fetchCount(db) > 0
-        if parentIsHere, parentIsInZone {
-          guard !droppedRecordIDs.contains(parentRecordID)
+        guard parentIsHere, parentIsInZone
+        else {
+          try setLoose(recordPrimaryKey)
+          return []
+        }
+
+        // NB: Followed up from the parent: a ring through the row comes back to it. Bounded by
+        //     the rows already seen, so a ring above the row ends the walk too.
+        var ring = [recordPrimaryKey]
+        var ancestor: String? = parentRecordPrimaryKey
+        while let current = ancestor, current != recordPrimaryKey, !ring.contains(current) {
+          ring.append(current)
+          ancestor = try parentKey(of: current)
+        }
+        if ancestor == recordPrimaryKey {
+          let placeholders = Array(repeating: "?", count: ring.count).joined(separator: ", ")
+          guard
+            let lowest = try String.fetchOne(
+              db,
+              sql: """
+                SELECT CAST(\(T.primaryKey.name.quotedDatabaseIdentifier) AS TEXT) \
+                FROM \(T.tableName.quotedDatabaseIdentifier) \
+                WHERE CAST(\(T.primaryKey.name.quotedDatabaseIdentifier) AS TEXT) IN (\(placeholders)) \
+                ORDER BY \(T.primaryKey.name.quotedDatabaseIdentifier) LIMIT 1
+                """,
+              arguments: StatementArguments(ring)
+            )
           else { return [] }
-          return [parentRecordID, recordID]
+          try setLoose(lowest)
+          return lowest == recordPrimaryKey ? [] : [recordID]
         }
-        guard !foreignKey.isNotNull
+
+        guard !droppedRecordIDs.contains(parentRecordID)
         else { return [] }
-        try $_isSynchronizingChanges.withValue(false) {
-          try db.execute(
-            sql: """
-              UPDATE \(T.tableName.quotedDatabaseIdentifier) SET \(foreignKey.from.quotedDatabaseIdentifier) = NULL
-              WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
-              """,
-            arguments: [recordPrimaryKey]
-          )
+
+        let iCloudHadParent =
+          try SyncMetadata
+          .where {
+            $0.recordPrimaryKey.eq(parentRecordPrimaryKey)
+              && $0.recordType.eq(T.tableName)
+              && $0.hasLastKnownServerRecord
+          }
+          .fetchCount(db) > 0
+        let isFirstResend = resentParentRecordIDs.withValue { $0.insert(parentRecordID).inserted }
+        guard !iCloudHadParent, isFirstResend
+        else {
+          try setLoose(recordPrimaryKey)
+          return []
         }
-        return []
+        return [parentRecordID, recordID]
       }
     }
 
@@ -1915,6 +1980,10 @@
     ) async {
       for savedRecord in savedRecords {
         await refreshLastKnownServerRecord(savedRecord)
+      }
+      // NB: A parent sent again and saved ends its refusal chain.
+      if !savedRecords.isEmpty {
+        resentParentRecordIDs.withValue { $0.subtract(savedRecords.map(\.recordID)) }
       }
 
       var newPendingRecordZoneChanges: [CKSyncEngine.PendingRecordZoneChange] = []
