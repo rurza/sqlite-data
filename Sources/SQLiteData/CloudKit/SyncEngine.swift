@@ -1556,9 +1556,20 @@
       .mapValues { $0.map(\.recordID) }
       for (recordType, recordIDs) in deletedRecordIDsByRecordType {
         if let table = tablesByName[recordType] {
-          func open<T>(_: some SynchronizableTable<T>) async {
-            await withErrorReporting(.sqliteDataCloudKitFailure) {
+          func open<T>(_ synchronizableTable: some SynchronizableTable<T>) async {
+            let looseRecordIDs = await withErrorReporting(.sqliteDataCloudKitFailure) {
               try await userDatabase.write { db in
+                // NB: In a table that references itself, a row deleted on another device can
+                //     still have children here — moved under it there, or made under it on a
+                //     device that had not heard of the deletion — and its 'ON DELETE SET NULL'
+                //     sets them loose. They are sent at the top, or iCloud would hold them for
+                //     ever under a parent it no longer has, which no other device can apply.
+                let looseRecordPrimaryKeys = try childrenLeftBehind(
+                  table: synchronizableTable,
+                  deletedRecordIDs: recordIDs,
+                  db: db
+                )
+
                 try T
                   .unscoped
                   .where {
@@ -1574,7 +1585,26 @@
                   .findAll(recordIDs)
                   .delete()
                   .execute(db)
+
+                guard !looseRecordPrimaryKeys.isEmpty
+                else { return [CKRecord.ID]() }
+                return try SyncMetadata
+                  .where {
+                    $0.recordType.eq(T.tableName)
+                      && $0.recordPrimaryKey.in(looseRecordPrimaryKeys)
+                      && !$0._isDeleted
+                  }
+                  .fetchAll(db)
+                  .map {
+                    CKRecord.ID(
+                      recordName: $0.recordName,
+                      zoneID: CKRecordZone.ID(zoneName: $0.zoneName, ownerName: $0.ownerName)
+                    )
+                  }
               }
+            }
+            if let looseRecordIDs, !looseRecordIDs.isEmpty {
+              syncEngine.state.add(pendingRecordZoneChanges: looseRecordIDs.map { .saveRecord($0) })
             }
           }
           await open(table)
@@ -1797,6 +1827,40 @@
           foreignKeys.count == 1 && foreignKeys.first?.table == tableName ? tableName : nil
         }
         .sorted()
+    }
+
+    /// The primary keys of the rows of `table` whose parent is among `deletedRecordIDs` and that
+    /// are not deleted with it: the rows the deletion's `ON DELETE SET NULL` will set loose.
+    /// Empty for a table that does not reference itself with `ON DELETE SET NULL`.
+    private func childrenLeftBehind<T>(
+      table: some SynchronizableTable<T>,
+      deletedRecordIDs: [CKRecord.ID],
+      db: Database
+    ) throws -> [String] {
+      guard
+        selfReferencingTableNames.contains(T.tableName),
+        let foreignKey = foreignKeysByTableName[T.tableName]?.first,
+        foreignKey.onDelete == .setNull,
+        !deletedRecordIDs.isEmpty
+      else { return [] }
+      let deletedRecordPrimaryKeys = try SyncMetadata
+        .findAll(deletedRecordIDs)
+        .select(\.recordPrimaryKey)
+        .fetchAll(db)
+      guard !deletedRecordPrimaryKeys.isEmpty
+      else { return [] }
+      let placeholders = Array(repeating: "?", count: deletedRecordPrimaryKeys.count)
+        .joined(separator: ", ")
+      return try String.fetchAll(
+        db,
+        sql: """
+          SELECT CAST(\(T.primaryKey.name.quotedDatabaseIdentifier) AS TEXT) \
+          FROM \(T.tableName.quotedDatabaseIdentifier) \
+          WHERE CAST(\(foreignKey.from.quotedDatabaseIdentifier) AS TEXT) IN (\(placeholders)) \
+          AND CAST(\(T.primaryKey.name.quotedDatabaseIdentifier) AS TEXT) NOT IN (\(placeholders))
+          """,
+        arguments: StatementArguments(deletedRecordPrimaryKeys + deletedRecordPrimaryKeys)
+      )
     }
 
     /// The parent of every synchronized row of a table that references itself, by record name,

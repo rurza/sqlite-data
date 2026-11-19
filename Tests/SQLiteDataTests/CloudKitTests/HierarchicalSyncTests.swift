@@ -448,4 +448,79 @@
       }
     }
   }
+
+  extension BaseCloudKitTests {
+    /// A hierarchy whose rows are set loose when their parent is deleted, and a parent deleted
+    /// on another device.
+    @MainActor
+    @Suite(.taskLocal($additionalTables, [SynchronizedTable(for: Shelf.self)]))
+    final class LooseHierarchySyncTests: BaseCloudKitTests, @unchecked Sendable {
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      func seedShelves() async throws {
+        try await userDatabase.userWrite { db in
+          try db.seed {
+            Shelf(id: 1, title: "Home")
+            Shelf(id: 2, title: "Kitchen", parentID: 1)
+            Shelf(id: 3, title: "Tiles", parentID: 2)
+          }
+        }
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+      }
+
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      func localShelves() async throws -> [Shelf] {
+        try await userDatabase.read { db in try Shelf.order(by: \.id).fetchAll(db) }
+      }
+
+      // MARK: - A parent deleted elsewhere
+
+      /// Another device deleted shelf 1 without having heard of 2 inside it, so iCloud holds 2
+      /// under a parent it no longer has. Applying 1's deletion here sets 2 loose — and 2 is sent,
+      /// at the top, so that a device that never had it can take it.
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func fetchedDeletionOfParentSendsLooseChildren() async throws {
+        try await seedShelves()
+
+        await syncEngine.handleFetchedRecordZoneChanges(
+          deletions: [(Shelf.recordID(for: 1), Shelf.tableName)],
+          syncEngine: syncEngine.private
+        )
+
+        let shelves = try await localShelves()
+        expectNoDifference(
+          shelves,
+          [Shelf(id: 2, title: "Kitchen"), Shelf(id: 3, title: "Tiles", parentID: 2)]
+        )
+        #expect(
+          syncEngine.private.state.pendingRecordZoneChanges == [
+            .saveRecord(Shelf.recordID(for: 2))
+          ]
+        )
+        try await syncEngine.processPendingRecordZoneChanges(scope: .private)
+        #expect(try syncEngine.private.database.record(for: Shelf.recordID(for: 2)).parent == nil)
+        #expect(
+          try syncEngine.private.database.record(for: Shelf.recordID(for: 3)).parent?.recordID
+            == Shelf.recordID(for: 2)
+        )
+      }
+
+      /// A parent deleted with its whole subtree sets nothing loose and sends nothing.
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func fetchedDeletionOfSubtreeSendsNothing() async throws {
+        try await seedShelves()
+
+        await syncEngine.handleFetchedRecordZoneChanges(
+          deletions: [
+            (Shelf.recordID(for: 3), Shelf.tableName),
+            (Shelf.recordID(for: 2), Shelf.tableName),
+            (Shelf.recordID(for: 1), Shelf.tableName),
+          ],
+          syncEngine: syncEngine.private
+        )
+
+        #expect(try await localShelves().isEmpty)
+        #expect(syncEngine.private.state.pendingRecordZoneChanges.isEmpty)
+      }
+    }
+  }
 #endif

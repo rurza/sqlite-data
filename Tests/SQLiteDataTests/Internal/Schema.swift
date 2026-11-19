@@ -59,6 +59,12 @@ import SQLiteData
   var title = ""
   var parentID: Folder.ID?
 }
+/// A hierarchy whose rows are set loose, not deleted, when their parent is.
+@Table("shelves") struct Shelf: Equatable, Identifiable {
+  let id: Int
+  var title = ""
+  var parentID: Shelf.ID?
+}
 @Table struct ModelA: Equatable, Identifiable {
   let id: Int
   var count = 0
@@ -209,6 +215,16 @@ func database(
         "id" INT PRIMARY KEY NOT NULL,
         "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
         "parentID" INTEGER REFERENCES "folders"("id") ON DELETE CASCADE
+      ) STRICT
+      """
+    )
+    .execute(db)
+    try #sql(
+      """
+      CREATE TABLE "shelves" (
+        "id" INT PRIMARY KEY NOT NULL,
+        "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+        "parentID" INTEGER REFERENCES "shelves"("id") ON DELETE SET NULL
       ) STRICT
       """
     )
