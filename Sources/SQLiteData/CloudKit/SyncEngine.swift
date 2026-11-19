@@ -1667,6 +1667,77 @@
       }
     }
 
+    /// What to do with a row of a table that references itself, whose save CloudKit refused
+    /// because it does not have the row's parent.
+    ///
+    /// Never a deletion. When this device still has the parent, in the row's own zone, the parent
+    /// and the row are sent again — the parent first, since saves are ordered by depth. Otherwise
+    /// the row's reference is set to `NULL` as a change of this device's, moving the row, and
+    /// everything below it, to the top of the hierarchy.
+    ///
+    /// - Returns: The records to save again.
+    private func resolveHierarchicalReferenceViolation<T>(
+      table: some SynchronizableTable<T>,
+      recordID: CKRecord.ID,
+      recordPrimaryKey: String,
+      foreignKey: ForeignKey,
+      droppedRecordIDs: Set<CKRecord.ID>
+    ) async throws -> [CKRecord.ID] {
+      try await userDatabase.write { db in
+        let parentRecordPrimaryKey = try String.fetchOne(
+          db,
+          sql: """
+            SELECT CAST(\(foreignKey.from.quotedDatabaseIdentifier) AS TEXT) FROM \(T.tableName.quotedDatabaseIdentifier)
+            WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
+            """,
+          arguments: [recordPrimaryKey]
+        )
+        guard let parentRecordPrimaryKey
+        else {
+          // NB: The row is a root now, or gone: whatever is sent next carries no parent.
+          return try T.unscoped
+            .where { #sql("\($0.primaryKey) = \(bind: recordPrimaryKey)") }
+            .fetchCount(db) > 0
+            ? [recordID]
+            : []
+        }
+        let parentRecordID = CKRecord.ID(
+          recordName: "\(parentRecordPrimaryKey):\(T.tableName)",
+          zoneID: recordID.zoneID
+        )
+        let parentIsHere =
+          try T.unscoped
+          .where { #sql("\($0.primaryKey) = \(bind: parentRecordPrimaryKey)") }
+          .fetchCount(db) > 0
+        let parentIsInZone =
+          try SyncMetadata
+          .where {
+            $0.recordPrimaryKey.eq(parentRecordPrimaryKey)
+              && $0.recordType.eq(T.tableName)
+              && $0.zoneName.eq(recordID.zoneID.zoneName)
+              && $0.ownerName.eq(recordID.zoneID.ownerName)
+          }
+          .fetchCount(db) > 0
+        if parentIsHere, parentIsInZone {
+          guard !droppedRecordIDs.contains(parentRecordID)
+          else { return [] }
+          return [parentRecordID, recordID]
+        }
+        guard !foreignKey.isNotNull
+        else { return [] }
+        try $_isSynchronizingChanges.withValue(false) {
+          try db.execute(
+            sql: """
+              UPDATE \(T.tableName.quotedDatabaseIdentifier) SET \(foreignKey.from.quotedDatabaseIdentifier) = NULL
+              WHERE \(T.primaryKey.name.quotedDatabaseIdentifier) = ?
+              """,
+            arguments: [recordPrimaryKey]
+          )
+        }
+        return []
+      }
+    }
+
     /// The tables whose one foreign key references the table itself: a hierarchy of its own
     /// rows, each pointing at its parent row with `CKRecord.parent`.
     var selfReferencingTableNames: [String] {
@@ -1737,6 +1808,19 @@
         syncEngine.state.add(pendingDatabaseChanges: newPendingDatabaseChanges)
         syncEngine.state.add(pendingRecordZoneChanges: newPendingRecordZoneChanges)
       }
+      // NB: Saves that failed for a reason that is not retried. A row of a table that references
+      //     itself is not sent again behind a parent among them, which would fail the same way.
+      let droppedRecordIDs = Set(
+        failedRecordSaves.compactMap { failedRecord, error -> CKRecord.ID? in
+          switch error.code {
+          case .serverRecordChanged, .zoneNotFound, .unknownItem, .referenceViolation,
+            .batchRequestFailed:
+            return nil
+          default:
+            return failedRecord.recordID
+          }
+        }
+      )
       for (failedRecord, error) in failedRecordSaves {
         func clearServerRecord() async {
           await withErrorReporting(.sqliteDataCloudKitFailure) {
@@ -1775,6 +1859,25 @@
             foreignKeysByTableName[table.base.tableName]?.count == 1,
             let foreignKey = foreignKeysByTableName[table.base.tableName]?.first
           else {
+            continue
+          }
+          // NB: A row of a table that references itself is never deleted for a parent CloudKit
+          //     does not have: the row may hold a whole subtree, moved there on purpose. Its
+          //     parent is sent again with it when this device still has the parent, and otherwise
+          //     the row is moved to the top of its hierarchy.
+          if foreignKey.table == table.base.tableName {
+            let recordIDsToSave = await withErrorReporting(.sqliteDataCloudKitFailure) {
+              try await resolveHierarchicalReferenceViolation(
+                table: table,
+                recordID: failedRecord.recordID,
+                recordPrimaryKey: recordPrimaryKey,
+                foreignKey: foreignKey,
+                droppedRecordIDs: droppedRecordIDs
+              )
+            }
+            newPendingRecordZoneChanges.append(
+              contentsOf: (recordIDsToSave ?? []).map { .saveRecord($0) }
+            )
             continue
           }
           func open<T>(_: some SynchronizableTable<T>) async throws {
