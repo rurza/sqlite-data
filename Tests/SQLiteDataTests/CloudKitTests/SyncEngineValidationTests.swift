@@ -325,6 +325,31 @@
       }
 
       @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
+      @Test func selfReferenceIsNotACycle() async throws {
+        let database = try DatabaseQueue()
+        try await database.write { db in
+          try #sql(
+            """
+            CREATE TABLE "recursiveTables" (
+              "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+              "parentID" INTEGER REFERENCES "recursiveTables"("id") ON DELETE CASCADE
+            ) STRICT
+            """
+          )
+          .execute(db)
+        }
+        _ = try await SyncEngine(
+          container: MockCloudContainer(
+            containerIdentifier: "deadbeef",
+            privateCloudDatabase: MockCloudDatabase(databaseScope: .private),
+            sharedCloudDatabase: MockCloudDatabase(databaseScope: .shared)
+          ),
+          userDatabase: UserDatabase(database: database),
+          tables: RecursiveTable.self
+        )
+      }
+
+      @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
       @Test func cycleValidation() async throws {
         let error = try #require(
           await #expect(throws: (any Error).self) {
@@ -332,9 +357,18 @@
             try await database.write { db in
               try #sql(
                 """
-                CREATE TABLE "recursiveTables" (
+                CREATE TABLE "cycleAs" (
                   "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                  "parentID" INTEGER REFERENCES "recursiveTables"("id")
+                  "cycleBID" INTEGER REFERENCES "cycleBs"("id") ON DELETE CASCADE
+                ) STRICT
+                """
+              )
+              .execute(db)
+              try #sql(
+                """
+                CREATE TABLE "cycleBs" (
+                  "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                  "cycleAID" INTEGER REFERENCES "cycleAs"("id") ON DELETE CASCADE
                 ) STRICT
                 """
               )
@@ -347,7 +381,8 @@
                 sharedCloudDatabase: MockCloudDatabase(databaseScope: .shared)
               ),
               userDatabase: UserDatabase(database: database),
-              tables: RecursiveTable.self
+              tables: CycleA.self,
+              CycleB.self
             )
           }
         )
@@ -360,7 +395,7 @@
           """
           SyncEngine.SchemaError(
             reason: .cycleDetected,
-            debugDescription: "Cycles are not currently permitted in schemas, e.g. a table that references itself."
+            debugDescription: "Cycles between tables are not currently permitted in schemas. A table may reference itself."
           )
           """
         }
@@ -371,5 +406,13 @@
   @Table struct RecursiveTable: Identifiable {
     let id: Int
     let parentID: RecursiveTable.ID?
+  }
+  @Table struct CycleA: Identifiable {
+    let id: Int
+    let cycleBID: CycleB.ID?
+  }
+  @Table struct CycleB: Identifiable {
+    let id: Int
+    let cycleAID: CycleA.ID?
   }
 #endif

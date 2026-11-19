@@ -34,7 +34,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -63,7 +63,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -92,7 +92,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -121,7 +121,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."modelAID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelAs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -150,7 +150,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."modelBID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelBs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -179,7 +179,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -208,7 +208,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -237,7 +237,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -266,7 +266,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -295,7 +295,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -324,7 +324,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("old"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -353,7 +353,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -375,7 +375,7 @@
                     SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."lastKnownServerRecord" AS "lastKnownServerRecord"
                     FROM "sqlitedata_icloud_metadata"
                     WHERE (("sqlitedata_icloud_metadata"."recordName") = ("new"."recordName"))
-                      UNION ALL
+                      UNION
                     SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."lastKnownServerRecord" AS "lastKnownServerRecord"
                     FROM "sqlitedata_icloud_metadata"
                     JOIN "ancestorMetadatas" ON ("sqlitedata_icloud_metadata"."recordName") IS ("ancestorMetadatas"."parentRecordName")
@@ -402,7 +402,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -423,7 +423,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -449,7 +449,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -475,7 +475,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -497,7 +497,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelAID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelAs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -523,7 +523,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelBID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelBs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -549,7 +549,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -571,7 +571,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -593,7 +593,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -619,7 +619,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -645,7 +645,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -671,7 +671,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -693,7 +693,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -724,7 +724,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -746,7 +746,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -767,7 +767,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -788,7 +788,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -809,7 +809,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelAID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelAs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -830,7 +830,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelBID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelBs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -851,7 +851,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -872,7 +872,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -893,7 +893,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -914,7 +914,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -935,7 +935,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -956,7 +956,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -977,7 +977,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -998,7 +998,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1019,7 +1019,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1052,7 +1052,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."parentID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('parents')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1085,7 +1085,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1110,7 +1110,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelAID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelAs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1143,7 +1143,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."modelBID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('modelBs')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1176,7 +1176,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1201,7 +1201,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1226,7 +1226,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1259,7 +1259,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1292,7 +1292,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS ("new"."remindersListID")) AND (("sqlitedata_icloud_metadata"."recordType") IS ('remindersLists')))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1325,7 +1325,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1350,7 +1350,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1378,7 +1378,7 @@
                     SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", NULL AS "parentRecordName"
                     FROM "sqlitedata_icloud_metadata"
                     WHERE (("sqlitedata_icloud_metadata"."recordName") = ("new"."recordName"))
-                      UNION ALL
+                      UNION
                     SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName"
                     FROM "sqlitedata_icloud_metadata"
                     JOIN "descendantMetadatas" ON ("sqlitedata_icloud_metadata"."parentRecordName") = ("descendantMetadatas"."recordName")
@@ -1397,7 +1397,7 @@
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE ((("sqlitedata_icloud_metadata"."recordPrimaryKey") IS (NULL)) AND (("sqlitedata_icloud_metadata"."recordType") IS (NULL)))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName", "sqlitedata_icloud_metadata"."share" AS "share"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "rootShares" ON ("sqlitedata_icloud_metadata"."recordName") IS ("rootShares"."parentRecordName")
@@ -1424,7 +1424,7 @@
                   SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", NULL AS "parentRecordName"
                   FROM "sqlitedata_icloud_metadata"
                   WHERE (("sqlitedata_icloud_metadata"."recordName") = ("new"."recordName"))
-                    UNION ALL
+                    UNION
                   SELECT "sqlitedata_icloud_metadata"."recordName" AS "recordName", "sqlitedata_icloud_metadata"."parentRecordName" AS "parentRecordName"
                   FROM "sqlitedata_icloud_metadata"
                   JOIN "descendantMetadatas" ON ("sqlitedata_icloud_metadata"."parentRecordName") = ("descendantMetadatas"."recordName")

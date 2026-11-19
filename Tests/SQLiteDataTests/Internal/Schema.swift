@@ -54,6 +54,11 @@ import SQLiteData
   var name = ""
   var parentID: LocalUser.ID?
 }
+@Table struct Folder: Equatable, Identifiable {
+  let id: Int
+  var title = ""
+  var parentID: Folder.ID?
+}
 @Table struct ModelA: Equatable, Identifiable {
   let id: Int
   var count = 0
@@ -194,6 +199,16 @@ func database(
         "id" INT PRIMARY KEY NOT NULL,
         "name" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
         "parentID" INTEGER REFERENCES "localUsers"("id") ON DELETE CASCADE
+      ) STRICT
+      """
+    )
+    .execute(db)
+    try #sql(
+      """
+      CREATE TABLE "folders" (
+        "id" INT PRIMARY KEY NOT NULL,
+        "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+        "parentID" INTEGER REFERENCES "folders"("id") ON DELETE CASCADE
       ) STRICT
       """
     )
